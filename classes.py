@@ -1,9 +1,38 @@
 class Receipt:
-    def __init__(self,check_id ,id_who_bought, goods ,users): # data is 2d array where first index is good name, second is amount, users is array of id of users
-        self.check_id = check_id
-        self.id_who_bought = id_who_bought
-        self.raw_goods = data
-        self.users = users
-        tmp = {}
-        for i in range(len(users)):
-            tmp[users[i]] = [0 for i in range(len(goods))]
+    def __init__(self, owner_id: int, products: list):
+        self.owner_id = owner_id
+        self.products = {}
+        for product in products:
+            self.products[product[0]] = product
+        self.poll_id_list = []
+        self.participants = {}  # key - user_id, value - list of goods with ratios
+
+    def add_poll(self, poll_id: int):
+        self.poll_id_list.append(poll_id)
+
+    def add_product(self, user_id: int, product_id: int, ratio: float):
+        if user_id not in self.participants:
+            self.participants[user_id] = []
+
+        # Check if we already have product in list (if so, delete it, so we can overwrite it)
+        for product_id_in_list, _ in self.participants[user_id]:
+            if product_id_in_list == product_id:
+                self.participants[user_id].remove((product_id_in_list, _))
+                break
+
+        self.participants[user_id].append((product_id, ratio))
+
+    def get_debts(self):
+        answer = {}
+
+        for user_id in self.participants:
+            debt = 0
+            for product_id, ratio in self.participants[user_id]:
+                product = self.products[product_id]
+                debt += product[2] * product[3] * ratio  # cnt * cost * ratio
+            answer[user_id] = debt
+
+        return answer
+
+    def remove_product(self, user_id: int, product_id: int):
+        pass  # TODO
