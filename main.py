@@ -2,7 +2,7 @@ import pandas as pd
 import telebot
 pathUnresolved = 'data/UnResolvedReceipt.csv'
 # 1951390501:AAHdfgn9-EjD1-DKT4Jv_KKwwV9De4ma6io ; Name of bot is ReceiptBot
-bot = telebot.TeleBot('1951390501:AAHdfgn9-EjD1-DKT4Jv_KKwwV9De4ma6io')
+bot = telebot.TeleBot('TOKEN')
 
 unresolved_receipts = pd.read_csv(pathUnresolved)
 tmp = unresolved_receipts['check_id']
