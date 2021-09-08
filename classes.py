@@ -41,8 +41,17 @@ class Receipt:
         return answer
 
     def remove_product(self, user_id: int, product_id: int):
-        pass  # TODO
+        if user_id not in self.participants:
+            return
 
+        for product, ratio in self.participants[user_id]:
+            if product_id == product:
+                self.participants[user_id].remove((product, ratio))
+                break
+
+        if len(self.participants[user_id]) == 0:
+            self.participants.pop(user_id)
+                
     def is_complete(self):
         remaining_products = {}
         for product_id in self.products:
