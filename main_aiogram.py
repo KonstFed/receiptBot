@@ -3,7 +3,7 @@ from aiogram.dispatcher import Dispatcher
 from aiogram.utils import executor
 import pandas as pd
 from aiogram.types import ReplyKeyboardRemove,ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
-
+import classes
 
 
 # surveys = {}
@@ -97,7 +97,8 @@ from aiogram.types import ReplyKeyboardRemove,ReplyKeyboardMarkup, KeyboardButto
 
 f = open("config.txt","r")
 TOKEN = f.read()
-
+unresolved_receipts = {}
+amount_checks = 0
 users_id = [] 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
@@ -115,9 +116,31 @@ def parse_receipt(raw_str: str):
         cost, other = strings[i+1].split(" x ")
         cnt, price = other.split(" = ")
         cost, cnt = float(cost), float(cnt)
-        answer.append((0,id, name, cnt, cost,date))
+        answer.append((id, name, cnt, cost,date))
 
     return answer
+
+async def resolve_check(mes,data,receipt: Receipt):
+    opt = []
+    for i in range(len(data)):
+        if (data[i][2] == 1.0):
+            opt.append(data[i][1])
+            if (len(opt) == 10):
+                receipt.add_poll()
+                msg = await bot.send_poll(mes.chat.id,"За что вкидываешься?",opt,is_anonymous=False,allows_multiple_answers=True)
+                opt = []
+
+    
+    msg = await bot.send_poll(mes.chat.id,"За что вкидываешься?",opt,is_anonymous=False,allows_multiple_answers=True)
+
+@dp.poll_answer_handler()
+async def handle_poll_answer(quiz_answer: types.PollAnswer):
+    for i in range(len(unresolved_receipts)):
+        for j in range(len(unresolved_receipts[i].poll_id_list)):
+            if unresolved_receipts[i].poll_id_list[j] == quiz_answer.poll_id:
+                quiz_answer.option_ids
+                unresolved_receipts[i].
+    print("answer to poll is ",quiz_answer)
 
 @dp.message_handler(commands=['start'])
 async def process_start_command(message: types.Message):
@@ -134,10 +157,14 @@ async def process_callback_button1(callback_query: types.CallbackQuery):
 @dp.message_handler()
 async def findReceipt(msg: types.Message):
     
-    if not("НДС" in msg):
+    if not("НДС" in msg.text):
         return
     
     data = parse_receipt(msg.text)
-    
+    cur_receipt = Receipt(msg.from_user.id, data)
+    unresolved_receipts[amount_checks] = cur_receipt
+    amount_checks += 1
+    await resolve_check(msg, data)
+
 if __name__ == '__main__':
     executor.start_polling(dp)
