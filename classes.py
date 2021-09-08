@@ -6,9 +6,11 @@ class Receipt:
             self.products[product[0]] = product
         self.poll_id_list = []
         self.participants = {}  # key - user_id, value - list of goods with ratios (product_id, ratio)
+        self.poll_options_id = {}
 
-    def add_poll(self, poll_id: int):
+    def add_poll(self, poll_id: int, poll_options):
         self.poll_id_list.append(poll_id)
+        self.poll_options_id[poll_id] = poll_options
 
     def add_product(self, user_id: int, product_id: int, ratio: float):
         if product_id not in self.products:
