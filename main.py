@@ -4,7 +4,7 @@ import telebot
 
 pathUnresolved = 'data/UnResolvedReceipt.csv'
 # 1951390501:AAHdfgn9-EjD1-DKT4Jv_KKwwV9De4ma6io ; Name of bot is ReceiptBot
-bot = telebot.TeleBot('1951390501:AAHdfgn9-EjD1-DKT4Jv_KKwwV9De4ma6io')
+bot = telebot.TeleBot('TOKEN')
 
 unresolved_receipts = pd.read_csv(pathUnresolved)
 tmp = unresolved_receipts['check_id']
@@ -82,7 +82,10 @@ def check_receipt(message):
     
 
 
+<<<<<<< HEAD
 updater = bot.Updater(TOKEN)
 dispatcher = updater.dispatcher
 dispatcher.add_handler(PollAnswerHandler(receive_poll_answer))
+=======
+>>>>>>> 6d890959516e470c353f82d5a220b9d8b803de63
 bot.polling()
