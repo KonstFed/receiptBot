@@ -59,6 +59,7 @@ def parse_receipt(raw_str: str):
     return data
 @dp.poll_answer_handler()
 async def handle_poll_answer(quiz_answer: types.PollAnswer):
+
     print("answer to poll is ",quiz_answer)
 @dp.message_handler(commands=['start'])
 async def process_start_command(message: types.Message):
@@ -80,7 +81,8 @@ async def echo_message(msg: types.Message):
 
     data = parse_receipt(msg.text) # parsing receipt to list of tuples
 
-    tmp = data.drop('goods_id',inplace=False,axis=1)
+    tmp = data.drop('goods_id',inplace=False,axis=1)  
+
 
     unresolved_receipts = pd.concat([unresolved_receipts,tmp],ignore_index=True)
 
