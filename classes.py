@@ -93,3 +93,17 @@ class Receipt:
                 answer = answer[:-1] + ";\n"
 
         return answer
+
+    def get_debts_str(self):
+        answer = "Following persons should give [{}] some money:".format(self.owner_id)
+
+        debts = self.get_debts()
+        for user_id in debts:
+            answer += " [{}] - {},".format(user_id, debts[user_id])
+
+        if len(debts) == 0:
+            answer += " no one\n"
+        else:
+            answer = answer[:-1] + "\n"
+
+        return answer
