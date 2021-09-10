@@ -7,10 +7,24 @@ class Receipt:
         self.poll_id_list = []
         self.participants = {}  # key - user_id, value - list of goods with ratios (product_id, ratio)
         self.poll_options_id = {}
+        self.unit_products = {}  # key - product_id, value - list of users who will by it
 
     def add_poll(self, poll_id: int, poll_options):
         self.poll_id_list.append(poll_id)
         self.poll_options_id[poll_id] = poll_options
+
+    def add_unit_product(self, user_id: int, product_id: int):  # For unit(единичных) products
+        if product_id not in self.unit_products:
+            self.unit_products[product_id] = []
+
+        if user_id not in self.unit_products[product_id]:
+            self.unit_products[product_id].append(user_id)
+            self.calculate_unit_product(product_id)
+
+    def calculate_unit_product(self, product_id: int):
+        ratio = 1 / len(self.unit_products[product_id])
+        for user in self.unit_products[product_id]:
+            self.add_product(user, product_id, ratio)
 
     def add_product(self, user_id: int, product_id: int, ratio: float):
         if product_id not in self.products:
@@ -49,6 +63,10 @@ class Receipt:
                 self.participants[user_id].remove((product, ratio))
                 break
 
+        if user_id in self.unit_products[product_id]:
+            self.unit_products[product_id].remove(user_id)
+            self.calculate_unit_product(product_id)
+
         if len(self.participants[user_id]) == 0:
             self.participants.pop(user_id)
 
@@ -83,13 +101,28 @@ class Receipt:
             answer += self.products[product_id][1] + ":"
             found = False
             for participant in self.participants:
-                if self.participants[participant][0] == product_id:
-                    answer += " [{}] - {},".format(participant, self.participants[participant][1])
-                    found = True
+                for product in self.participants[participant]:
+                    if product[0] == product_id:
+                        answer += " [{}] - {},".format(participant, product[1])
+                        found = True
 
             if not found:
                 answer += " no one bought this;\n"
             else:
                 answer = answer[:-1] + ";\n"
+
+        return answer
+
+    def get_debts_str(self):
+        answer = "Following persons should give [{}] some money:".format(self.owner_id)
+
+        debts = self.get_debts()
+        for user_id in debts:
+            answer += " [{}] - {},".format(user_id, debts[user_id])
+
+        if len(debts) == 0:
+            answer += " no one\n"
+        else:
+            answer = answer[:-1] + "\n"
 
         return answer
