@@ -97,10 +97,17 @@ from classes import Receipt
 
 f = open("config.txt","r")
 TOKEN = f.read()
+
+chat_groups = []
+
+'''
+chats_id = {}
 unresolved_receipts = {}
 unresolved_polls = {} # key в этом словаре poll id, value list id пользователей кто вкинулся и за что
+users_id = []
+'''
 amount_checks = 0
-users_id = [] 
+
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
 
@@ -137,7 +144,7 @@ async def resolve_check(mes,data,receipt: Receipt):
     
     cur_poll = await bot.send_poll(mes.chat.id,"За что вкидываешься?",opt,is_anonymous=False,allows_multiple_answers=True)
     print(cur_poll.poll.id)
-    receipt.add_poll(cur_poll.message_id,poll_options)
+    receipt.add_poll(cur_poll.poll.id,poll_options)
 
 
 def resolve_goods(receipt: Receipt,poll_id):
@@ -161,7 +168,7 @@ async def handle_poll_answer(quiz_answer: types.PollAnswer):
     for i in range(len(unresolved_receipts)):
         for j in range(len(unresolved_receipts[i].poll_id_list)):
             if unresolved_receipts[i].poll_id_list[j] == quiz_answer.poll_id:
-                if len(unresolved_polls[quiz_answer.poll_id]) == len(users_id):
+                if len(unresolved_polls) == len(users_id):
 
                     resolve_goods(unresolved_receipts[i],quiz_answer.poll_id)
 
@@ -170,25 +177,27 @@ async def handle_poll_answer(quiz_answer: types.PollAnswer):
                         quiz_answer.user.id: quiz_answer.option_ids
                     }
                     unresolved_polls[quiz_answer.poll_id].append(tmp)
+                
 
     print("answer to poll is ",quiz_answer.poll_id)
 
 
 @dp.message_handler(commands=['start'])
 async def process_start_command(message: types.Message):
-    await message.reply("Hello, It is receipt analyizing bot that will help you divide cash between your roomates!",reply_markup=inline_reg)
+    print("start command ",message.chat.id)
+    await message.reply("Hello, It is receipt analyizing bot that will help you divide cash between your roomates! To start /register")
 
 
-@dp.callback_query_handler(text='register_button')
-async def process_callback_button1(callback_query: types.CallbackQuery):
+@dp.message_handler(commands=['register'])
+async def process_callback_button1(message: types.Message):
 
-    await bot.answer_callback_query(callback_query.id)
-
-    if not(callback_query.from_user.id in users_id):
-        users_id.append(callback_query.from_user.id)
+    if message.chat.id in chats_id:
+        if message.from_user.id not in chats_id[message.chat.id]:
+            chats_id[message.chat.id].append(message.from_user.id)
+    else:
+        chats_id[message.chat.id] = [message.from_user.id]
         
-    await bot.send_message(callback_query.from_user.id, 'You was registered')
-    print(users_id)
+    await message.reply('You was registered')
 
 @dp.message_handler(commands=['receipt'])
 async def findReceipt(msg: types.Message):
