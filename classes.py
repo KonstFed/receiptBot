@@ -118,6 +118,8 @@ class Receipt:
 
         debts = self.get_debts()
         for user_id in debts:
+            if user_id == self.owner_id:
+                continue
             answer += " [{}] - {},".format(user_id, debts[user_id])
 
         if len(debts) == 0:
