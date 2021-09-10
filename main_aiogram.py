@@ -3,7 +3,7 @@ from aiogram.dispatcher import Dispatcher
 from aiogram.utils import executor
 import pandas as pd
 from aiogram.types import ReplyKeyboardRemove,ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
-import classes
+from classes import Receipt
 
 
 # surveys = {}
@@ -98,6 +98,7 @@ import classes
 f = open("config.txt","r")
 TOKEN = f.read()
 unresolved_receipts = {}
+unresolved_polls = {} # key в этом словаре poll id, value list id пользователей кто вкинулся и за что
 amount_checks = 0
 users_id = [] 
 bot = Bot(token=TOKEN)
@@ -121,42 +122,77 @@ def parse_receipt(raw_str: str):
     return answer
 
 async def resolve_check(mes,data,receipt: Receipt):
-    opt = []
+    poll_options = []
+    opt = ["Nothing"]
     for i in range(len(data)):
         if (data[i][2] == 1.0):
             opt.append(data[i][1])
+            poll_options.append(i)
             if (len(opt) == 10):
-                receipt.add_poll()
+                
                 msg = await bot.send_poll(mes.chat.id,"За что вкидываешься?",opt,is_anonymous=False,allows_multiple_answers=True)
                 opt = []
+                poll_options = []
 
     
-    msg = await bot.send_poll(mes.chat.id,"За что вкидываешься?",opt,is_anonymous=False,allows_multiple_answers=True)
+    cur_poll = await bot.send_poll(mes.chat.id,"За что вкидываешься?",opt,is_anonymous=False,allows_multiple_answers=True)
+    print(cur_poll.poll.id)
+    receipt.add_poll(cur_poll.message_id,poll_options)
+
+
+def resolve_goods(receipt: Receipt,poll_id):
+    products_id = receipt.poll_options_id[poll_id] # index from poll to goods id
+    goods = [0]*len(products_id)
+    for key_user_id in unresolved_polls[poll_id]:
+        # cur_product_ids = [products_id[i] for i in unresolved_polls[poll_id][key_user_id]]
+        for j in (unresolved_polls[poll_id][key_user_id]):
+            goods[unresolved_polls[poll_id][key_user_id][j]] += 1
+    for i in range(len(goods)):
+        ratio = 1/goods[i]
+        for key_user_id in unresolved_polls[poll_id]:
+            if i in unresolved_polls[poll_id][key_user_id]:
+                receipt.add_product(key_user_id, products_id[i], ratio)
+        receipt.add_product(user_id, products_id[i], ratio)
+    
 
 @dp.poll_answer_handler()
 async def handle_poll_answer(quiz_answer: types.PollAnswer):
+
     for i in range(len(unresolved_receipts)):
         for j in range(len(unresolved_receipts[i].poll_id_list)):
             if unresolved_receipts[i].poll_id_list[j] == quiz_answer.poll_id:
-                quiz_answer.option_ids
-                unresolved_receipts[i].
-    print("answer to poll is ",quiz_answer)
+                if len(unresolved_polls[quiz_answer.poll_id]) == len(users_id):
+
+                    resolve_goods(unresolved_receipts[i],quiz_answer.poll_id)
+
+                if quiz_answer.user.id not in unresolved_polls[quiz_answer.poll_id]:
+                    tmp = {
+                        quiz_answer.user.id: quiz_answer.option_ids
+                    }
+                    unresolved_polls[quiz_answer.poll_id].append(tmp)
+
+    print("answer to poll is ",quiz_answer.poll_id)
+
 
 @dp.message_handler(commands=['start'])
 async def process_start_command(message: types.Message):
     await message.reply("Hello, It is receipt analyizing bot that will help you divide cash between your roomates!",reply_markup=inline_reg)
 
+
 @dp.callback_query_handler(text='register_button')
 async def process_callback_button1(callback_query: types.CallbackQuery):
+
     await bot.answer_callback_query(callback_query.id)
+
     if not(callback_query.from_user.id in users_id):
         users_id.append(callback_query.from_user.id)
+        
     await bot.send_message(callback_query.from_user.id, 'You was registered')
     print(users_id)
 
-@dp.message_handler()
+@dp.message_handler(commands=['receipt'])
 async def findReceipt(msg: types.Message):
-    
+    global amount_checks
     if not("НДС" in msg.text):
         return
     
@@ -164,7 +200,7 @@ async def findReceipt(msg: types.Message):
     cur_receipt = Receipt(msg.from_user.id, data)
     unresolved_receipts[amount_checks] = cur_receipt
     amount_checks += 1
-    await resolve_check(msg, data)
+    await resolve_check(msg, data,cur_receipt)
 
 if __name__ == '__main__':
     executor.start_polling(dp)
