@@ -1,3 +1,6 @@
+import json
+
+
 class Receipt:
     def __init__(self, owner_id: int, products: list):
         self.owner_id = owner_id
@@ -128,3 +131,20 @@ class Receipt:
             answer = answer[:-1] + "\n"
 
         return answer
+
+    def get_save_json(self):
+        return json.dumps({"owner_id": self.owner_id,
+                           "products": self.products,
+                           "poll_id_list": self.poll_id_list,
+                           "participants": self.participants,
+                           "poll_options_id": self.poll_options_id,
+                           "unit_products": self.unit_products})
+
+    def load_from_json(self, json_str: str):
+        values = json.loads(json_str)
+        self.owner_id = values["owner_id"]
+        self.products = values["products"]
+        self.poll_id_list = values["poll_id_list"]
+        self.participants = values["participants"]
+        self.poll_options_id = values["poll_options_id"]
+        self.unit_products = values["unit_products"]
