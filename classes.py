@@ -120,12 +120,14 @@ class Receipt:
         answer = "Following persons should give [{}] some money:".format(self.owner_id)
 
         debts = self.get_debts()
+        flag = False
         for user_id in debts:
             if user_id == self.owner_id:
                 continue
+            flag = True
             answer += " [{}] - {},".format(user_id, debts[user_id])
 
-        if len(debts) == 0:
+        if not flag:
             answer += " no one\n"
         else:
             answer = answer[:-1] + "\n"
