@@ -150,6 +150,14 @@ class Receipt:
                 "poll_options_id": self.poll_options_id,
                 "unit_products": self.unit_products}
 
+    def fix_keys(self):
+        # This function changes keys from str to dict
+        # It is needed after loading data
+
+        self.participants = dict(map(lambda k, v: (int(k), v), self.participants.keys(), self.participants.values()))
+        self.products = dict(map(lambda k, v: (int(k), v), self.products.keys(), self.products.values()))
+        self.unit_products = dict(map(lambda k, v: (int(k), v), self.unit_products.keys(), self.unit_products.values()))
+
     def load_from_json(self, json_str: str):
         values = json.loads(json_str)
         self.owner_id = values["owner_id"]
@@ -159,6 +167,8 @@ class Receipt:
         self.poll_options_id = values["poll_options_id"]
         self.unit_products = values["unit_products"]
 
+        self.fix_keys()
+
     def load_from_dict(self, values: dict):
         self.owner_id = values["owner_id"]
         self.products = values["products"]
@@ -166,3 +176,15 @@ class Receipt:
         self.participants = values["participants"]
         self.poll_options_id = values["poll_options_id"]
         self.unit_products = values["unit_products"]
+
+        self.fix_keys()
+
+if __name__ == "__main__":
+    receipt = Receipt(126, [(7, "Name", 67, 32, "date"), (9, "AbobA", 44, 2, "date")])
+    receipt.add_unit_product(4, 9)
+
+    d = receipt.get_save_dict()
+    print(d)
+    receipt.load_from_json(receipt.get_save_json())
+    d = receipt.get_save_dict()
+    print(d)
