@@ -66,7 +66,7 @@ class Receipt:
                 self.participants[user_id].remove((product, ratio))
                 break
 
-        if user_id in self.unit_products[product_id]:
+        if product_id in self.unit_products and user_id in self.unit_products[product_id]:
             self.unit_products[product_id].remove(user_id)
             self.calculate_unit_product(product_id)
 
@@ -142,8 +142,24 @@ class Receipt:
                            "poll_options_id": self.poll_options_id,
                            "unit_products": self.unit_products})
 
+    def get_save_dict(self):
+        return {"owner_id": self.owner_id,
+                "products": self.products,
+                "poll_id_list": self.poll_id_list,
+                "participants": self.participants,
+                "poll_options_id": self.poll_options_id,
+                "unit_products": self.unit_products}
+
     def load_from_json(self, json_str: str):
         values = json.loads(json_str)
+        self.owner_id = values["owner_id"]
+        self.products = values["products"]
+        self.poll_id_list = values["poll_id_list"]
+        self.participants = values["participants"]
+        self.poll_options_id = values["poll_options_id"]
+        self.unit_products = values["unit_products"]
+
+    def load_from_dict(self, values: dict):
         self.owner_id = values["owner_id"]
         self.products = values["products"]
         self.poll_id_list = values["poll_id_list"]
