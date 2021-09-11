@@ -68,7 +68,10 @@ class Receipt:
 
         if product_id in self.unit_products and user_id in self.unit_products[product_id]:
             self.unit_products[product_id].remove(user_id)
-            self.calculate_unit_product(product_id)
+            if len(self.unit_products[product_id]) == 0:
+                self.unit_products.pop(product_id)
+            else:
+                self.calculate_unit_product(product_id)
 
         if len(self.participants[user_id]) == 0:
             self.participants.pop(user_id)
@@ -113,6 +116,8 @@ class Receipt:
                 answer += " no one bought this;\n"
             else:
                 answer = answer[:-1] + ";\n"
+
+                answer += "\n"
 
         return answer
 
@@ -178,6 +183,7 @@ class Receipt:
         self.unit_products = values["unit_products"]
 
         self.fix_keys()
+
 
 if __name__ == "__main__":
     receipt = Receipt(126, [(7, "Name", 67, 32, "date"), (9, "AbobA", 44, 2, "date")])
