@@ -151,7 +151,7 @@ async def handle_poll_answer(quiz_answer: types.PollAnswer):
 @dp.message_handler(commands=['done'])
 async def process_start_command(message: types.Message):
     try:
-        cur_group = getGroup(message.chat.id)
+        cur_group = get_group(message.chat.id)
         if cur_group.unresolved_receipts[0].is_complete():
             await on_complete(cur_group.unresolved_receipts[0], cur_group)
         else:
@@ -171,13 +171,13 @@ async def process_start_command(message: types.Message):
         groups.append(gr)
         read_data()
         await message.reply(
-            "Hello, It is receipt analyizing bot that will help you divide cash between your roomates! To start "
+            "Hello, It is receipt analyzing bot that will help you divide cash between your roommates! To start "
             "/register")
     except Exception:
         await send_message_fuck(message)
 
 
-def getGroup(group_id):
+def get_group(group_id):
     for i in range(len(groups)):
         if groups[i].chat_id == group_id:
             return groups[i]
@@ -187,7 +187,7 @@ def getGroup(group_id):
 @dp.message_handler(commands=['register'])
 async def process_callback_button1(message: types.Message):
     try:
-        cur_group = getGroup(message.chat.id)
+        cur_group = get_group(message.chat.id)
         if message.from_user.id in cur_group.users_id:
             await message.reply("You are already registered")
             return
@@ -199,13 +199,13 @@ async def process_callback_button1(message: types.Message):
 
 
 @dp.message_handler(commands=['receipt'])
-async def findReceipt(msg: types.Message):
+async def find_receipt(msg: types.Message):
     try:
 
         if not ("НДС" in msg.text):
             return
 
-        cur_group = getGroup(msg.chat.id)
+        cur_group = get_group(msg.chat.id)
         if len(cur_group.unresolved_receipts) != 0:
             await bot.send_message(msg.chat.id, "Sorry, but you need to resolve your previous receipt first")
             return
@@ -225,7 +225,7 @@ async def findReceipt(msg: types.Message):
 @dp.message_handler(commands=['status'])
 async def give_status(msg: types.Message):
     try:
-        cur_group = getGroup(msg.chat.id)
+        cur_group = get_group(msg.chat.id)
         s = ""
         for i in range(len(cur_group.unresolved_receipts)):
             f_part = cur_group.unresolved_receipts[i].get_status()
@@ -248,10 +248,10 @@ async def send_message_fuck(msg):
 
 
 @dp.message_handler(commands=['add'])
-async def addRatio(msg: types.Message):
+async def add_ratio(msg: types.Message):
     try:
         data = msg.text.split()
-        cur_group = getGroup(msg.chat.id)
+        cur_group = get_group(msg.chat.id)
         cur_rec = cur_group.unresolved_receipts[0]
         s = data[2]
         if '%' in data[2]:
