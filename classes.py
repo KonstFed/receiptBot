@@ -104,7 +104,7 @@ class Receipt:
         answer = "Owner: [{}]\n".format(self.owner_id)
 
         for product_id in self.products:  # product: id, name, cnt, cost, date
-            answer += self.products[product_id][1] + ":"
+            answer += "(" + str(self.products[product_id]) + ") " + self.products[product_id][1] + ":"
             found = False
             for participant in self.participants:
                 for product in self.participants[participant]:
@@ -117,7 +117,7 @@ class Receipt:
             else:
                 answer = answer[:-1] + ";\n"
 
-                answer += "\n"
+            answer += "\n"
 
         return answer
 
@@ -188,9 +188,13 @@ class Receipt:
 if __name__ == "__main__":
     receipt = Receipt(126, [(7, "Name", 67, 32, "date"), (9, "AbobA", 44, 2, "date")])
     receipt.add_unit_product(4, 9)
+    receipt.add_unit_product(4, 7)
+    receipt.remove_product(4, 7)
 
     d = receipt.get_save_dict()
     print(d)
-    receipt.load_from_json(receipt.get_save_json())
+    receipt.load_from_dict(d)
     d = receipt.get_save_dict()
     print(d)
+
+    print(d == d)
