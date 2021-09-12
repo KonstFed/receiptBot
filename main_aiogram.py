@@ -8,6 +8,7 @@ import json
 
 class Group():
     def __init__(self,chat_id):
+        self.debts = []
         self.chat_id = chat_id
         self.amount_checks = 0
         self.users_id = []
@@ -16,6 +17,10 @@ class Group():
     def add_user(self,user_id,nick):
         self.users_id.append(user_id)
         self.users_name[user_id] = nick
+        tmp = []
+        # for i in range(self.users_id):
+        #     tmp.append(0)
+
     def from_json(self,chat_id,users_id,users_name,unresolved_receipts):
         self.chat_id = chat_id
         self.users_id = users_id
@@ -109,11 +114,12 @@ async def resolve_check(mes,data,receipt: Receipt):
     save_data()
 
 
-def on_complete(receipt,cur_group):
+async def on_complete(receipt,cur_group):
     s = "You resolved receipt, congrats!!!\n" + receipt.get_debts_str()
     for j in cur_group.users_id:
         s = s.replace('[' + str(j) + ']',"@" + cur_group.users_name[j])
-    bot.send_message(cur_group.chat_id, text)
+    cur_group.unresolved_receipts = []
+    await bot.send_message(cur_group.chat_id, text)
 
 
 @dp.poll_answer_handler()
@@ -133,26 +139,32 @@ async def handle_poll_answer(quiz_answer: types.PollAnswer):
                         for ind in goods_id:
                             cur_group.unresolved_receipts[j].remove_product(quiz_answer.user.id,goods_id[ind])
                     
-    read_data()
-
-
-@dp.message_handler(commands=['save'])
-async def process_start_command(message: types.Message):
     save_data()
 
-
-@dp.message_handler(commands=['load'])
+@dp.message_handler(commands=['done'])
 async def process_start_command(message: types.Message):
-    read_data()
-
+    try:
+        cur_group = getGroup(message.chat.id)
+        if cur_group.unresolved_receipts[0].is_complete():
+            await on_complete(cur_group.unresolved_receipts[0], cur_group)
+        else:
+            await bot.send_message(message.chat.id, "You have not finished your receipt")
+    except Exception:
+        await send_message_fuck(message)
 
 @dp.message_handler(commands=['start'])
 async def process_start_command(message: types.Message):
-    print("start command ",message.chat.id)
-    gr = Group(message.chat.id)
-    groups.append(gr)
-    read_data()
-    await message.reply("Hello, It is receipt analyizing bot that will help you divide cash between your roomates! To start /register")
+    try:
+        print("start command ",message.chat.id)
+        for gr in groups:
+            if gr.chat_id == message.chat.id:
+                return
+        gr = Group(message.chat.id)
+        groups.append(gr)
+        read_data()
+        await message.reply("Hello, It is receipt analyizing bot that will help you divide cash between your roomates! To start /register")
+    except Exception:
+        await send_message_fuck(message)
 
 def getGroup(group_id):
     for i in range(len(groups)):
@@ -160,63 +172,86 @@ def getGroup(group_id):
             return groups[i]
     return None
 
+
 @dp.message_handler(commands=['register'])
 async def process_callback_button1(message: types.Message):
-    cur_group = getGroup(message.chat.id)
-    cur_group.add_user(message.from_user.id,message.from_user.username)
-    read_data()
-    await message.reply('You was registered')
+    try:
+        cur_group = getGroup(message.chat.id)
+        cur_group.add_user(message.from_user.id,message.from_user.username)
+        save_data()
+        await message.reply('You was registered')
+    except Exception:
+        await send_message_fuck(message)
+
 
 @dp.message_handler(commands=['receipt'])
 async def findReceipt(msg: types.Message):
     global amount_checks
-    if not("НДС" in msg.text):
-        return
-    # try:    
-    cur_group = getGroup(msg.chat.id)
-    if len(cur_group.unresolved_receipts)!=0:
-        await bot.send_message(msg.chat.id, "Sorry, but you need to resolve your previous receipt first")
-        return 
+    try:
     
-    data = parse_receipt(msg.text[10:])
-    # except Exception:
-    #     return
-    cur_receipt = Receipt(msg.from_user.id, data)
-    cur_group.unresolved_receipts.append(cur_receipt)
-    cur_group.amount_checks += 1
-    read_data()
-    await resolve_check(msg, data,cur_receipt)
-
+        if not("НДС" in msg.text):
+            return
+        # try:    
+        cur_group = getGroup(msg.chat.id)
+        if len(cur_group.unresolved_receipts)!=0:
+            await bot.send_message(msg.chat.id, "Sorry, but you need to resolve your previous receipt first")
+            return 
+        
+        data = mgs.text.replace("/receipt","")
+        # except Exception:
+        #     return
+        cur_receipt = Receipt(msg.from_user.id, data)
+        cur_group.unresolved_receipts.append(cur_receipt)
+        cur_group.amount_checks += 1
+        save_data()
+        await resolve_check(msg, data,cur_receipt)
+    except Exception:
+        await send_message_fuck(msg)
+        return
 
 @dp.message_handler(commands=['status'])
 async def give_status(msg: types.Message):
-    cur_group = getGroup(msg.chat.id)
-    s = ""
-    for i in range(len(cur_group.unresolved_receipts)):
-        f_part = cur_group.unresolved_receipts[i].get_status()
-        s_part = cur_group.unresolved_receipts[i].get_debts_str()
-        print(f_part+ "\n" + s_part)
-        for j in cur_group.users_id:
-            s_part = s_part.replace('[' + str(j) + ']',"@" + cur_group.users_name[j])
-            f_part = f_part.replace('[' + str(j) + ']',"@" + cur_group.users_name[j])
-        # for i in range() 
-        s += f_part + "\n" + s_part + "\n\n"
-    await bot.send_message(msg.chat.id, s)
+    try:
+        cur_group = getGroup(msg.chat.id)
+        s = ""
+        for i in range(len(cur_group.unresolved_receipts)):
+            f_part = cur_group.unresolved_receipts[i].get_status()
+            s_part = cur_group.unresolved_receipts[i].get_debts_str()
+            print(f_part+ "\n" + s_part)
+            for j in cur_group.users_id:
+                s_part = s_part.replace('[' + str(j) + ']',"@" + cur_group.users_name[j])
+                f_part = f_part.replace('[' + str(j) + ']',"@" + cur_group.users_name[j])
+            # for i in range() 
+            s += f_part + "\n" + s_part + "\n\n"
+        await bot.send_message(msg.chat.id, s)
+    except Exception:
+        await send_message_fuck(msg)
+        return
+
+async def send_message_fuck(msg):
+    s = "Wrong command, go fuck yourself"
+    await msg.reply(s)
 
 @dp.message_handler(commands=['add'])
 async def addRatio(msg: types.Message):
-    data = msg.text.split()
-    cur_group = getGroup(msg.chat.id)
-    cur_rec = cur_group.unresolved_receipts[0]
-    s = data[2]
-    ratio = 0
-    if '%' in data[2]:
-        s = s.replace('%', '')
-        ratio = int(s)/100
-    else:
-        ratio = float(s)
-    cur_rec.add_product(msg.from_user.id, int(data[1]), ratio)
-    read_data()
+    try:
+        data = msg.text.split()
+        cur_group = getGroup(msg.chat.id)
+        cur_rec = cur_group.unresolved_receipts[0]
+        s = data[2]
+        ratio = 0
+        if '%' in data[2]:
+            s = s.replace('%', '')
+            ratio = int(s)/100
+        else:
+            ratio = float(s)
+        cur_rec.add_product(msg.from_user.id, int(data[1]), ratio)
+        save_data()
+    except Exception:
+        await send_message_fuck(msg)
+        return
 if __name__ == '__main__':
+
+
     read_data()
     executor.start_polling(dp)
