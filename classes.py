@@ -104,7 +104,7 @@ class Receipt:
         answer = "Owner: [{}]\n".format(self.owner_id)
 
         for product_id in self.products:  # product: id, name, cnt, cost, date
-            answer += "(" + str(self.products[product_id]) + ") " + self.products[product_id][1] + ":"
+            answer += "(" + str(self.products[product_id][0]) + ") " + self.products[product_id][1] + ":"
             found = False
             for participant in self.participants:
                 for product in self.participants[participant]:
